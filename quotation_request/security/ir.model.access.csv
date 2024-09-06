@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_quotation_request_user,Quotation Request User,model_quotation_request,base.group_user,1,1,1,1
+access_quotation_request_line_user,Quotation Request Line User,model_quotation_request_line,base.group_user,1,1,1,1
+access_quotation_request_portal,Quotation Request Portal,model_quotation_request,base.group_portal,1,1,1,0
+access_quotation_request_line_portal,Quotation Request Line Portal,model_quotation_request_line,base.group_portal,1,1,1,0

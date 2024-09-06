@@ -1,0 +1,148 @@
+<odoo>
+    <template id="quotation_request_list" name="Quotation Request List">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <h2>My Quotation Requests</h2>
+                <a href="/my/quotations/new" class="btn btn-primary mb-3">New Request</a>
+                <t t-call="portal.portal_table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="requests" t-as="request">
+                            <tr>
+                                <td><t t-esc="request.name"/></td>
+                                <td><t t-esc="request.date_request"/></td>
+                                <td><t t-esc="request.state"/></td>
+                                <td>
+                                    <a t-att-href="'/my/quotations/%s' % request.id">View</a>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <template id="create_quotation_request" name="Create Quotation Request">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <h2>New Quotation Request</h2>
+                <form action="/my/quotations/submit" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label for="delivery_deadline">Delivery Deadline</label>
+                        <input type="date" name="delivery_deadline" class="form-control" required="required" t-att-min="min_date"/>
+                    </div>
+                    <div id="product-lines">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="product_id_0">Product</label>
+                                <select name="product_id_0" class="form-control" required="required">
+                                    <option value="">Select a product</option>
+                                    <t t-foreach="products" t-as="product">
+                                        <option t-att-value="product.id"><t t-esc="product.name"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="quantity_0">Quantity</label>
+                                <input type="number" name="quantity_0" class="form-control" required="required" min="1" value="1"/>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary mb-3" onclick="addProductLine()">Add Product</button>
+                    <input type="hidden" name="line_count" id="line_count" value="1"/>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </form>
+            </div>
+            <script type ="text/javascript">
+                function addProductLine() {
+                    var lineCount = parseInt(document.getElementById('line_count').value);
+                    var newLine = document.createElement('div');
+                    newLine.className = 'row mb-3';
+                    newLine.innerHTML = `
+                        <div class="col-md-6">
+                            <label for="product_id_${lineCount}">Product</label>
+                            <select name="product_id_${lineCount}" class="form-control" required="required">
+                                <option value="">Select a product</option>
+                                <t t-foreach="products" t-as="product">
+                                    <option t-att-value="product.id"><t t-esc="product.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="quantity_${lineCount}">Quantity</label>
+                            <input type="number" name="quantity_${lineCount}" class="form-control" required="required" min="1" value="1"/>
+                        </div>
+                    `;
+                    document.getElementById('product-lines').appendChild(newLine);
+                    document.getElementById('line_count').value = lineCount + 1;
+                }
+            </script>
+        </t>
+    </template>
+
+    <template id="view_quotation_request" name="View Quotation Request">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <h2>Quotation Request: <t t-esc="quotation_request.name"/></h2>
+                <p>Status: <t t-esc="quotation_request.state"/></p>
+                <p>Date: <t t-esc="quotation_request.date_request"/></p>
+                
+                <h3>Requested Products</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="quotation_request.line_ids" t-as="line">
+                            <tr>
+                                <td><t t-esc="line.product_id.name"/></td>
+                                <td><t t-esc="line.quantity"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+
+                <t t-if="quotation_request.quotation_id">
+                    <h3>Generated Quotation</h3>
+                    <p>Quotation Number: <t t-esc="quotation_request.quotation_id.name"/></p>
+                    <p>Total Amount: <span t-field="quotation_request.quotation_id.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.quotation_id.currency_id}'/></p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="quotation_request.quotation_id.order_line" t-as="line">
+                                <tr>
+                                    <td><t t-esc="line.product_id.name"/></td>
+                                    <td><t t-esc="line.product_uom_qty"/></td>
+                                    <td><t t-esc="line.price_unit"/></td>
+                                    <td><t t-esc="line.price_subtotal"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+                <t t-else="">
+                    <p>No quotation has been generated yet. (Debug: quotation_id = <t t-esc="quotation_request.quotation_id"/>)</p>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

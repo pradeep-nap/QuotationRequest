@@ -1,0 +1,16 @@
+<odoo>
+    <template id="portal_my_home_design" inherit_id="portal.portal_my_home" priority="50">
+        <xpath expr="//div[@id='portal_alert_category']" position="after">
+            <div class="o_portal_category row g-2 mt-3">
+                <!-- Quotation Requests Menu -->
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="icon" t-value="'/quotation_request/static/src/img/quotation.png'"/>
+                    <t t-set="title">Quotation Requests</t>
+                    <t t-set="text">Add, remove or view your quotation</t>
+                    <t t-set="url" t-value="'/my/quotations'"/>
+                    <t t-set="config_card" t-value="True"/>
+                </t>
+            </div>
+        </xpath>
+    </template>
+</odoo>
