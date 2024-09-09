@@ -6,8 +6,17 @@ class QuotationRequestController(http.Controller):
     @http.route('/my/quotations', type='http', auth='user', website=True)
     def list_quotation_requests(self, **kw):
         requests = request.env['quotation.request'].search([('partner_id', '=', request.env.user.partner_id.id)])
+        state_mapping = {
+            'draft': 'Draft',
+            'submitted': 'Submitted',
+            'validated': 'Validated',
+            'rfq_created': 'RFQ Created',
+            'confirmed': 'Confirmed',
+            'rejected': 'Rejected'
+        }
         return request.render('quotation_request.quotation_request_list', {
-            'requests': requests
+            'requests': requests,
+            'state_mapping': state_mapping
         })
 
     @http.route('/my/quotations/new', type='http', auth='user', website=True)

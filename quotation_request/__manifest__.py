@@ -18,6 +18,7 @@
     'assets': {
         'web.assets_backend': [
             'quotation_request/static/src/img/quot.png',
+            'quotation_request/static/src/css/addProduct.css',
         ],
     },
     'demo': [],
