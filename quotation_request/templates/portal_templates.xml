@@ -60,7 +60,7 @@
                     </div>
                     <div class="card-body">
                         <form action="/my/quotations/submit" method="post" class="js_website_submit_form">
-                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
                             <div id="product-lines" class="mb-3">
                                 <!-- Product lines will be added here -->
@@ -179,6 +179,19 @@
                     addProductLine();
                 });
             </script>
+            <script type="text/javascript">
+                // Function to refresh CSRF token
+                function refreshCSRFToken() {
+                    fetch('/web/csrf/refresh')
+                        .then(response => response.json())
+                        .then(data => {
+                            document.querySelector('input[name="csrf_token"]').value = data.csrf_token;
+                        });
+                }
+
+                // Refresh CSRF token every 50 minutes
+                setInterval(refreshCSRFToken, 50 * 60 * 1000);
+            </script>
         </t>
     </template>
 
@@ -191,11 +204,11 @@
                             <div class="col">
                                 <h1 class="h3 mb-0">Quotation Request: <span t-esc="quotation_request.name"/></h1>
                             </div>
-                            <div class="col-auto">
+                            <!-- <div class="col-auto">
                                 <span t-attf-class="badge badge-pill badge-#{quotation_request.state == 'validated' and 'success' or (quotation_request.state == 'submitted' and 'warning' or 'info')}">
                                     <t t-esc="quotation_request.state.capitalize()"/>
                                 </span>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                     <div class="card-body">
