@@ -5,16 +5,17 @@ class QuotationRequestController(http.Controller):
 
     @http.route('/my/quotations', type='http', auth='user', website=True)
     def list_quotation_requests(self, **kw):
-        requests = request.env['quotation.request'].search([('partner_id', '=', request.env.user.partner_id.id)])
+        requests = request.env['quotation.request'].search([('partner_id', '=', request.env.user.partner_id.id)], order='create_date desc')
         state_mapping = {
             'draft': 'Draft',
             'submitted': 'Submitted',
             'validated': 'Validated',
-            'rfq_created': 'RFQ Created',
+            'quotation_sent': 'Quotation Sent',
             'confirmed': 'Confirmed',
             'rejected': 'Rejected'
         }
         return request.render('quotation_request.quotation_request_list', {
+            'page_name': 'quotation_lists',
             'requests': requests,
             'state_mapping': state_mapping
         })
@@ -66,11 +67,19 @@ class QuotationRequestController(http.Controller):
         if not quotation_request:
             return request.redirect('/my/quotations')
         
-        # Force computation of quotation_id
-        quotation_request._compute_quotation_id()
+        state_mapping = {
+            'draft': 'Draft',
+            'submitted': 'Submitted',
+            'validated': 'Validated',
+            'quotation_sent': 'Quotation Sent',
+            'confirmed': 'Confirmed',
+            'rejected': 'Rejected'
+        }
         
         return request.render('quotation_request.view_quotation_request', {
+            'page_name': 'view_quotation',
             'quotation_request': quotation_request,
+            'state_mapping': state_mapping
         })
 
     @http.route(['/my/quotations/<int:quotation_id>/validate'], type='http', auth="user", website=True)
@@ -79,3 +88,17 @@ class QuotationRequestController(http.Controller):
         if quotation_request.exists() and quotation_request.state in ['draft', 'submitted']:
             quotation_request.action_validate()
         return request.redirect('/my/quotations/%s' % quotation_id)
+
+    @http.route(['/my/quotations/<int:request_id>/accept'], type='http', auth="user", website=True)
+    def accept_quotation(self, request_id, **post):
+        quotation_request = request.env['quotation.request'].sudo().browse(request_id)
+        if quotation_request.exists() and quotation_request.state == 'quotation_sent':
+            quotation_request.write({'state': 'accepted'})
+        return request.redirect('/my/quotations/%s' % request_id)
+
+    @http.route(['/my/quotations/<int:request_id>/reject'], type='http', auth="user", website=True)
+    def reject_quotation(self, request_id, **post):
+        quotation_request = request.env['quotation.request'].sudo().browse(request_id)
+        if quotation_request.exists() and quotation_request.state == 'quotation_sent':
+            quotation_request.write({'state': 'rejected'})
+        return request.redirect('/my/quotations/%s' % request_id)

@@ -1,4 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <template id="portal_breadcrumbs" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <!-- Quotation Requests breadcrumbs -->
+            <li t-if="page_name == 'quotation_lists'" class="breadcrumb-item">
+                <span>Quotation Requests</span>
+            </li>
+            <li t-if="page_name == 'create_quotation'" class="breadcrumb-item">
+                <a href="/my/quotations">Quotation Requests</a>
+                /
+                <span>Create Request</span>
+            </li>
+            <li t-if="page_name == 'view_quotation'" class="breadcrumb-item">
+                <a href="/my/quotations">Quotation Requests</a>
+                /
+                <span>View Details</span>
+            </li>
+            <li t-if="page_name == 'edit_quotation'" class="breadcrumb-item">
+                <a href="/my/quotations">Quotation Requests</a>
+                /
+                <span>Edit Request</span>
+            </li>
+        </xpath>
+    </template>
     <template id="quotation_request_list" name="Quotation Request List">
         <t t-call="portal.portal_layout">
             <div class="container mt-4">
@@ -215,11 +239,6 @@
                             <div class="col">
                                 <h1 class="h3 mb-0">Quotation Request: <span t-esc="quotation_request.name"/></h1>
                             </div>
-                            <div class="col-auto">
-                                <span t-attf-class="badge badge-pill badge-#{quotation_request.state == 'validated' and 'success' or (quotation_request.state == 'submitted' and 'warning' or 'info')}">
-                                    <t t-esc="quotation_request.state.capitalize()"/>
-                                </span>
-                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -229,6 +248,9 @@
                             </div>
                             <div class="col-sm-6">
                                 <p><strong>Delivery Deadline:</strong> <span t-field="quotation_request.delivery_deadline" t-options='{"widget": "date"}'/></p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p><strong>Status:</strong> <span t-esc="state_mapping.get(quotation_request.state, '')"/></p>
                             </div>
                         </div>
                         
@@ -252,46 +274,36 @@
                             </table>
                         </div>
 
-                        <t t-if="quotation_request.quotation_id">
-                            <h3 class="mt-4 mb-3">Generated Quotation</h3>
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <p><strong>Quotation Number:</strong> <t t-esc="quotation_request.quotation_id.name"/></p>
-                                    <p><strong>Total Amount:</strong> <span t-field="quotation_request.quotation_id.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.quotation_id.currency_id}'/></p>
-                                </div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="thead-light">
+                        <div class="card-body">
+                            <!-- New Quotation Information Section -->
+                            <t t-if="quotation_request.quotation_id">
+                                <h3 class="mt-4">Generated Quotation</h3>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
                                         <tr>
-                                            <th>Product</th>
-                                            <th class="text-right">Quantity</th>
-                                            <th class="text-right">Unit Price</th>
-                                            <th class="text-right">Subtotal</th>
+                                            <th>Quotation Number:</th>
+                                            <td><t t-esc="quotation_request.quotation_id.name"/></td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="quotation_request.quotation_id.order_line" t-as="line">
-                                            <tr>
-                                                <td><t t-esc="line.product_id.name"/></td>
-                                                <td class="text-right"><t t-esc="line.product_uom_qty"/></td>
-                                                <td class="text-right">
-                                                    <span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": quotation_request.quotation_id.currency_id}'/>
-                                                </td>
-                                                <td class="text-right">
-                                                    <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": quotation_request.quotation_id.currency_id}'/>
-                                                </td>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </t>
-                        <t t-else="">
-                            <div class="alert alert-info mt-4" role="alert">
-                                <i class="fa fa-info-circle"></i> No quotation has been generated yet.
-                            </div>
-                        </t>
+                                        <tr>
+                                            <th>Date:</th>
+                                            <td><t t-esc="quotation_request.quotation_id.date_order" t-options='{"widget": "date"}'/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Total Amount:</th>
+                                            <td><t t-esc="quotation_request.quotation_id.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.quotation_id.currency_id}'/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <t t-if="quotation_request.state == 'quotation_sent'">
+                                    <a t-att-href="'/my/quotations/%s/accept' % quotation_request.id" class="btn btn-primary">
+                                        <i class="fa fa-check"></i> Accept Quotation
+                                    </a>
+                                    <a t-att-href="'/my/quotations/%s/reject' % quotation_request.id" class="btn btn-danger">
+                                        <i class="fa fa-times"></i> Reject Quotation
+                                    </a>
+                                </t>
+                            </t>
+                        </div>
                     </div>
                 </div>
             </div>

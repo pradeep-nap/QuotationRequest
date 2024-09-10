@@ -14,6 +14,7 @@
         'views/rfq.xml',
         'views/quotation_req.xml',
         'templates/portal_templates.xml', 
+        'views/portal_quot.xml',
     ],
     'assets': {
         'web.assets_backend': [

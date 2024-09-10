@@ -11,16 +11,19 @@ class QuotationRequest(models.Model, MailThread):
     date_request = fields.Date(string='Request Date', default=fields.Date.today)
     delivery_deadline = fields.Date(string='Delivery Deadline')
     state = fields.Selection([
+        ('draft', 'Draft'),
         ('submitted', 'Submitted'),
         ('validated', 'Validated'),
-        ('rfq_created', 'RFQ Created'),
+        ('quotation_sent', 'Quotation Sent'),
         ('confirmed', 'Confirmed'),
         ('rejected', 'Rejected')
-    ], string='Status', default='submitted')
+    ], string='Status', default='draft')
     line_ids = fields.One2many('quotation.request.line', 'request_id', string='Request Lines')
     purchase_order_id = fields.Many2one('purchase.order', string='Related RFQ/Purchase Order')
     message_follower_ids = fields.One2many('mail.followers', 'res_id', string='Followers')
     message_ids = fields.One2many('mail.message', 'res_id', string='Messages')
+    quotation_id = fields.Many2one('sale.order', string='Generated Quotation', readonly=True)
+    user_id = fields.Many2one('res.users', string='Requester', default=lambda self: self.env.user)
 
     @api.model
     def create(self, vals):
@@ -77,17 +80,8 @@ class QuotationRequest(models.Model, MailThread):
         if self.purchase_order_id and self.purchase_order_id.state == 'draft':
             self.purchase_order_id.button_confirm()
             self.write({'state': 'confirmed'})
-    quotation_id = fields.Many2one('sale.order', string='Generated Quotation', readonly=True)
 
-    @api.depends('name')
-    def _compute_quotation_id(self):
-        for record in self:
-            record.quotation_id = self.env['sale.order'].search([
-                ('origin', '=', record.name),
-                ('partner_id', '=', record.partner_id.id),
-            ], limit=1)
-
-    def generate_quotation_button_method(self):
+    def generate_quotation(self):
         self.ensure_one()
         if self.state != 'validated':
             return
@@ -105,10 +99,11 @@ class QuotationRequest(models.Model, MailThread):
             'partner_id': self.partner_id.id,
             'origin': self.name,
             'order_line': order_lines,
+            'state': 'draft',
         })
 
         self.write({
-            'state': 'rfq_created',
+            'state': 'quotation_sent',
             'quotation_id': quotation.id
         })
 
@@ -129,6 +124,21 @@ class QuotationRequest(models.Model, MailThread):
             'view_mode': 'form',
             'target': 'current',
         }
+
+    @api.depends('name', 'partner_id')
+    def _compute_quotation_id(self):
+        for record in self:
+            quotation = self.env['sale.order'].search([
+                ('origin', '=', record.name),
+                ('partner_id', '=', record.partner_id.id),
+            ], limit=1)
+            record.quotation_id = quotation.id if quotation else False
+
+    def action_confirm_quotation(self):
+        self.ensure_one()
+        if self.quotation_id and self.quotation_id.state == 'draft':
+            self.quotation_id.action_confirm()
+            self.write({'state': 'confirmed'})
 
 class QuotationRequestLine(models.Model):
     _name = 'quotation.request.line'

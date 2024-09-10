@@ -5,11 +5,14 @@
         <field name="arch" type="xml">
             <form>
                 <header>
+                    <button name="action_submit" string="Submit" type="object" 
+                            class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_validate" string="Validate" type="object" 
                             invisible="state != 'submitted'"/>
-                    <button name="action_create_rfq" string="Create RFQ" type="object" 
+                    <button name="generate_quotation" string="Generate Quotation" type="object" 
                             invisible="state != 'validated'"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,validated,rfq_created"/>
+                    <field name="state" widget="statusbar" 
+                            statusbar_visible="draft,submitted,validated,quotation_sent"/>
                 </header>
                 <sheet>
                     <group>
