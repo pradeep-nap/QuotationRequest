@@ -50,3 +50,95 @@
 .btn-success {
   margin-bottom: 1.5rem;
 }
+
+.unit-display {
+  min-width: 50px;
+  text-align: center;
+  font-weight: bold;
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+  border-left: none;
+  padding: 0.375rem 0.75rem;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.input-group-text {
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+
+.quantity-input {
+  text-align: center;
+  border-right: none;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.product-line {
+  margin-bottom: 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+.product-line .card-body {
+  padding: 1rem;
+}
+
+.form-group label {
+  font-weight: bold;
+}
+
+.date-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.date-box .input-group-prepend {
+  margin-right: 0;
+}
+
+.date-box .input-group-text {
+  border: none;
+  background-color: #f8f9fa;
+}
+
+.date-box input[type="date"] {
+  border: none;
+  flex-grow: 1;
+  padding: 0.375rem 0.75rem;
+}
+
+.input-group-append {
+  margin-left: 0 !important;
+}
+
+.input-group > .form-control:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.input-group > .input-group-append > .input-group-text {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}

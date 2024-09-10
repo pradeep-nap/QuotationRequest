@@ -41,6 +41,11 @@
                                     </td>
                                 </tr>
                             </t>
+                            <t t-if="not requests">
+                                <tr class="text-center">
+                                    <td colspan="6">No data found</td>
+                                </tr>
+                            </t>
                         </tbody>
                     </t>
                 </div>
@@ -102,96 +107,102 @@
                             document.querySelector('.date-box').addEventListener('click', function() {
                                 document.getElementById('delivery_deadline').focus();
                             });
+
+                            function addProductLine() {
+                                var lineCount = parseInt(document.getElementById('line_count').value);
+                                var newLine = document.createElement('div');
+                                newLine.className = 'card mb-3 product-line';
+                                newLine.innerHTML = `
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-5 mb-3">
+                                                <label for="product_id_${lineCount}" class="font-weight-bold">Product</label>
+                                                <select name="product_id_${lineCount}" class="form-control product-select" required="required" onchange="updateUnit(this)">
+                                                    <option value="">Select a product</option>
+                                                    <t t-foreach="products" t-as="product">
+                                                        <option t-att-value="product.id" t-att-data-uom="product.uom_id.name"><t t-esc="product.name"/></option>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="quantity_${lineCount}" class="font-weight-bold">Quantity</label>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <button class="btn btn-outline-secondary" type="button" onclick="decrementQuantity(this)">-</button>
+                                                    </div>
+                                                    <input type="number" name="quantity_${lineCount}" class="form-control quantity-input" required="required" min="1" value="1"/>
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity(this)">+</button>
+                                                        <span class="input-group-text unit-display"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 d-flex align-items-end">
+                                                <button type="button" class="btn btn-danger btn-block" onclick="removeProductLine(this)">
+                                                    <i class="fa fa-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                document.getElementById('product-lines').appendChild(newLine);
+                                document.getElementById('line_count').value = lineCount + 1;
+                                updateRemoveButtons();
+                            }
+
+                            function updateUnit(select) {
+                                var unitDisplay = select.closest('.card-body').querySelector('.unit-display');
+                                var selectedOption = select.options[select.selectedIndex];
+                                var unit = selectedOption.getAttribute('data-uom');
+                                unitDisplay.textContent = unit || '';
+                            }
+
+                            function removeProductLine(button) {
+                                button.closest('.product-line').remove();
+                                updateRemoveButtons();
+                            }
+
+                            function updateRemoveButtons() {
+                                var productLines = document.querySelectorAll('.product-line');
+                                var removeButtons = document.querySelectorAll('.product-line .btn-danger');
+                                removeButtons.forEach(function(button, index) {
+                                    button.style.display = (productLines.length > 1 || index > 0) ? 'block' : 'none';
+                                });
+                            }
+
+                            function incrementQuantity(button) {
+                                var input = button.closest('.input-group').querySelector('.quantity-input');
+                                input.value = parseInt(input.value) + 1;
+                            }
+
+                            function decrementQuantity(button) {
+                                var input = button.closest('.input-group').querySelector('.quantity-input');
+                                var value = parseInt(input.value);
+                                if (value > 1) {
+                                    input.value = value - 1;
+                                }
+                            }
+
+                            // Add the first product line on page load
+                            document.addEventListener('DOMContentLoaded', function() {
+                                addProductLine();
+                            });
+
+                            // Function to refresh CSRF token
+                            function refreshCSRFToken() {
+                                fetch('/web/csrf/refresh')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        document.querySelector('input[name="csrf_token"]').value = data.csrf_token;
+                                    });
+                            }
+
+                            // Refresh CSRF token every 50 minutes
+                            setInterval(refreshCSRFToken, 50 * 60 * 1000);
                         </script>
                     </div>
                 </div>
             </div>
-            <script type="text/javascript">
-                function addProductLine() {
-                    var lineCount = parseInt(document.getElementById('line_count').value);
-                    var newLine = document.createElement('div');
-                    newLine.className = 'card mb-3 product-line';
-                    newLine.innerHTML = `
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-5 mb-3">
-                                    <label for="product_id_${lineCount}" class="font-weight-bold">Product</label>
-                                    <select name="product_id_${lineCount}" class="form-control" required="required">
-                                        <option value="">Select a product</option>
-                                        <t t-foreach="products" t-as="product">
-                                            <option t-att-value="product.id"><t t-esc="product.name"/></option>
-                                        </t>
-                                    </select>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="quantity_${lineCount}" class="font-weight-bold">Quantity</label>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <button class="btn btn-outline-secondary" type="button" onclick="decrementQuantity(this)">-</button>
-                                        </div>
-                                        <input type="number" name="quantity_${lineCount}" class="form-control quantity-input" required="required" min="1" value="1"/>
-                                        <div class="input-group-append">
-                                            <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity(this)">+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button type="button" class="btn btn-danger btn-block" onclick="removeProductLine(this)">
-                                        <i class="fa fa-trash"></i> Remove
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('product-lines').appendChild(newLine);
-                    document.getElementById('line_count').value = lineCount + 1;
-                    updateRemoveButtons();
-                }
-
-                function removeProductLine(button) {
-                    button.closest('.product-line').remove();
-                    updateRemoveButtons();
-                }
-
-                function updateRemoveButtons() {
-                    var productLines = document.querySelectorAll('.product-line');
-                    var removeButtons = document.querySelectorAll('.product-line .btn-danger');
-                    removeButtons.forEach(function(button, index) {
-                        button.style.display = (productLines.length > 1 || index > 0) ? 'block' : 'none';
-                    });
-                }
-
-                function incrementQuantity(button) {
-                    var input = button.closest('.input-group').querySelector('.quantity-input');
-                    input.value = parseInt(input.value) + 1;
-                }
-
-                function decrementQuantity(button) {
-                    var input = button.closest('.input-group').querySelector('.quantity-input');
-                    var value = parseInt(input.value);
-                    if (value > 1) {
-                        input.value = value - 1;
-                    }
-                }
-
-                // Add the first product line on page load
-                document.addEventListener('DOMContentLoaded', function() {
-                    addProductLine();
-                });
-            </script>
-            <script type="text/javascript">
-                // Function to refresh CSRF token
-                function refreshCSRFToken() {
-                    fetch('/web/csrf/refresh')
-                        .then(response => response.json())
-                        .then(data => {
-                            document.querySelector('input[name="csrf_token"]').value = data.csrf_token;
-                        });
-                }
-
-                // Refresh CSRF token every 50 minutes
-                setInterval(refreshCSRFToken, 50 * 60 * 1000);
-            </script>
         </t>
     </template>
 
@@ -204,11 +215,11 @@
                             <div class="col">
                                 <h1 class="h3 mb-0">Quotation Request: <span t-esc="quotation_request.name"/></h1>
                             </div>
-                            <!-- <div class="col-auto">
+                            <div class="col-auto">
                                 <span t-attf-class="badge badge-pill badge-#{quotation_request.state == 'validated' and 'success' or (quotation_request.state == 'submitted' and 'warning' or 'info')}">
                                     <t t-esc="quotation_request.state.capitalize()"/>
                                 </span>
-                            </div> -->
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">

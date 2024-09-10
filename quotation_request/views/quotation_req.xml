@@ -22,12 +22,18 @@
                             class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_validate" string="Validate" type="object" 
                             class="btn-primary" invisible="state != 'submitted'"/>
-                    <button name="action_create_rfq" string="Create RFQ" type="object" 
+                    <button name="generate_quotation_button_method" string="Generate Quotation" type="object" 
                             class="btn-primary" invisible="state != 'validated'"/>
                     <field name="state" widget="statusbar" 
-                        statusbar_visible="draft,submitted,validated,rfq_created"/>
+                        statusbar_visible="submitted,validated,rfq_created"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_quotation" type="object" class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="not quotation_id">
+                            <field name="quotation_id" widget="statinfo" string="Quotation"/>
+                        </button>
+                    </div>
                     <group>
                         <group>
                             <field name="name"/>
@@ -45,7 +51,18 @@
                                 <tree editable="bottom">
                                     <field name="product_id"/>
                                     <field name="quantity"/>
+                                    <field name="product_uom" groups="uom.group_uom"/>
                                 </tree>
+                                <form>
+                                    <group>
+                                        <field name="product_id"/>
+                                        <label for="quantity"/>
+                                        <div class="o_row">
+                                            <field name="quantity"/>
+                                            <field name="product_uom" groups="uom.group_uom"/>
+                                        </div>
+                                    </group>
+                                </form>
                             </field>
                         </page>
                     </notebook>

@@ -11,13 +11,12 @@ class QuotationRequest(models.Model, MailThread):
     date_request = fields.Date(string='Request Date', default=fields.Date.today)
     delivery_deadline = fields.Date(string='Delivery Deadline')
     state = fields.Selection([
-        ('draft', 'Draft'),
         ('submitted', 'Submitted'),
         ('validated', 'Validated'),
         ('rfq_created', 'RFQ Created'),
         ('confirmed', 'Confirmed'),
         ('rejected', 'Rejected')
-    ], string='Status', default='draft')
+    ], string='Status', default='submitted')
     line_ids = fields.One2many('quotation.request.line', 'request_id', string='Request Lines')
     purchase_order_id = fields.Many2one('purchase.order', string='Related RFQ/Purchase Order')
     message_follower_ids = fields.One2many('mail.followers', 'res_id', string='Followers')
@@ -27,13 +26,17 @@ class QuotationRequest(models.Model, MailThread):
     def create(self, vals):
         if vals.get('name', 'New') == 'New':
             vals['name'] = self.env['ir.sequence'].next_by_code('quotation.request') or 'New'
+        vals['state'] = 'submitted'
         return super(QuotationRequest, self).create(vals)
 
     def action_submit(self):
         self.write({'state': 'submitted'})
 
     def action_validate(self):
-        self.write({'state': 'validated'})
+        self.ensure_one()
+        if self.state == 'submitted':
+            self.state = 'validated'
+            # Add any additional logic for validation here
 
     def action_create_rfq(self):
         self.ensure_one()
@@ -74,7 +77,7 @@ class QuotationRequest(models.Model, MailThread):
         if self.purchase_order_id and self.purchase_order_id.state == 'draft':
             self.purchase_order_id.button_confirm()
             self.write({'state': 'confirmed'})
-    quotation_id = fields.Many2one('sale.order', string='Generated Quotation', compute='_compute_quotation_id', store=True)
+    quotation_id = fields.Many2one('sale.order', string='Generated Quotation', readonly=True)
 
     @api.depends('name')
     def _compute_quotation_id(self):
@@ -134,3 +137,4 @@ class QuotationRequestLine(models.Model):
     request_id = fields.Many2one('quotation.request', string='Quotation Request', required=True, ondelete='cascade')
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1.0)
+    product_uom = fields.Many2one('uom.uom', string='Unit of Measure', related='product_id.uom_id', readonly=True)

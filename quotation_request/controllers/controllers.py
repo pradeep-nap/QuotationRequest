@@ -30,17 +30,32 @@ class QuotationRequestController(http.Controller):
 
     @http.route('/my/quotations/submit', type='http', auth='user', website=True, methods=['POST'])
     def submit_quotation_request(self, **post):
-        vals = {
-            'partner_id': request.env.user.partner_id.id,
-            'state': 'submitted',
-            'delivery_deadline': post.get('delivery_deadline'),  
-            'line_ids': [(0, 0, {
-                'product_id': int(post.get(f'product_id_{i}')),
-                'quantity': float(post.get(f'quantity_{i}'))
-            }) for i in range(int(post.get('line_count', 0)))]
+        partner_id = request.env.user.partner_id.id
+        line_count = int(post.get('line_count', 0))
+        
+        values = {
+            'partner_id': partner_id,
+            'delivery_deadline': post.get('delivery_deadline'),
+            'line_ids': []
         }
-        new_request = request.env['quotation.request'].sudo().create(vals)
-        return request.redirect('/my/quotations')
+
+        for i in range(line_count):
+            product_id = post.get(f'product_id_{i}')
+            quantity = post.get(f'quantity_{i}')
+            
+            if product_id and quantity:
+                product = request.env['product.product'].sudo().browse(int(product_id))
+                values['line_ids'].append((0, 0, {
+                    'product_id': int(product_id),
+                    'quantity': float(quantity),
+                    'product_uom': product.uom_id.id,
+                }))
+
+        if values['line_ids']:
+            quotation_request = request.env['quotation.request'].sudo().create(values)
+            return request.redirect('/my/quotations')
+        else:
+            return request.redirect('/my/quotations/create?error=no_products')
 
     @http.route('/my/quotations/<int:request_id>', type='http', auth='user', website=True)
     def view_quotation_request(self, request_id, **kw):
@@ -57,3 +72,10 @@ class QuotationRequestController(http.Controller):
         return request.render('quotation_request.view_quotation_request', {
             'quotation_request': quotation_request,
         })
+
+    @http.route(['/my/quotations/<int:quotation_id>/validate'], type='http', auth="user", website=True)
+    def validate_quotation_request(self, quotation_id, **post):
+        quotation_request = request.env['quotation.request'].sudo().browse(quotation_id)
+        if quotation_request.exists() and quotation_request.state in ['draft', 'submitted']:
+            quotation_request.action_validate()
+        return request.redirect('/my/quotations/%s' % quotation_id)
