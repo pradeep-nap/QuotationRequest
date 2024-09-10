@@ -24,8 +24,7 @@
                             invisible="state != 'submitted'"/>
                     <button name="generate_quotation" string="Generate Quotation" type="object" 
                             invisible="state != 'validated'"/>
-                    <field name="state" widget="statusbar" 
-                        statusbar_visible="submitted,validated,rfq_created"/>
+                    <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
                     <group>
@@ -73,7 +72,7 @@
         <record id="seq_quotation_request" model="ir.sequence">
             <field name="name">Quotation Request Sequence</field>
             <field name="code">quotation.request</field>
-            <field name="prefix">QR</field>
+            <field name="prefix">QR/</field>
             <field name="padding">4</field>
             <field name="number_increment">1</field>
             <field name="number_next">1</field>

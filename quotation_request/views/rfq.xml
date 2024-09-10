@@ -11,15 +11,14 @@
                             invisible="state != 'submitted'"/>
                     <button name="generate_quotation" string="Generate Quotation" type="object" 
                             invisible="state != 'validated'"/>
-                    <field name="state" widget="statusbar" 
-                            statusbar_visible="draft,submitted,validated,quotation_sent"/>
+                    <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
                     <group>
                         <field name="name"/>
                         <field name="partner_id"/>
                         <field name="date_request"/>
-                        <field name="purchase_order_id" readonly="1"/>
+                        <field name="quotation_id" readonly="1" string="Quotation/Sales Order Reference"/>
                     </group>
                     <notebook>
                         <page string="Products">

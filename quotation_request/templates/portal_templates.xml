@@ -43,25 +43,21 @@
                                 <th style="padding: 10px 15px;">Reference</th>
                                 <th style="padding: 10px 15px;">Date</th>
                                 <th style="padding: 10px 15px;">Status</th>
-                                <th class="text-right" style="padding: 10px 15px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <t t-foreach="requests" t-as="request">
                                 <tr>
                                     <td style="padding: 10px 15px;">
-                                        <strong t-esc="request.name"/>
+                                        <a t-att-href="'/my/quotations/%s' % request.id" class="text-primary text-bold">
+                                        <t t-esc="request.name"/>
+                                        </a>
                                     </td>
                                     <td style="padding: 10px 15px;">
                                         <span t-field="request.date_request" t-options='{"widget": "date"}'/>
                                     </td>
                                     <td style="padding: 10px 15px;">
                                         <t t-esc="state_mapping.get(request.state, '')"/>
-                                    </td>
-                                    <td class="text-right" style="padding: 10px 15px;">
-                                        <a t-att-href="'/my/quotations/%s' % request.id" class="btn btn-sm btn-outline-primary">
-                                            <i class="fa fa-eye"></i> View
-                                        </a>
                                     </td>
                                 </tr>
                             </t>
@@ -276,21 +272,21 @@
 
                         <div class="card-body">
                             <!-- New Quotation Information Section -->
-                            <t t-if="quotation_request.quotation_id">
+                            <t t-if="quotation_request.quotation_id or quotation_request.sale_order_id">
                                 <h3 class="mt-4">Generated Quotation</h3>
                                 <div class="table-responsive">
                                     <table class="table table-sm">
                                         <tr>
-                                            <th>Quotation Number:</th>
-                                            <td><t t-esc="quotation_request.quotation_id.name"/></td>
+                                            <th>Number:</th>
+                                            <td><t t-esc="quotation_request.sale_order_id.name or quotation_request.quotation_id.name"/></td>
                                         </tr>
                                         <tr>
                                             <th>Date:</th>
-                                            <td><t t-esc="quotation_request.quotation_id.date_order" t-options='{"widget": "date"}'/></td>
+                                            <td><t t-esc="quotation_request.sale_order_id.date_order or quotation_request.quotation_id.date_order" t-options='{"widget": "date"}'/></td>
                                         </tr>
                                         <tr>
                                             <th>Total Amount:</th>
-                                            <td><t t-esc="quotation_request.quotation_id.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.quotation_id.currency_id}'/></td>
+                                            <td><t t-esc="quotation_request.sale_order_id.amount_total or quotation_request.quotation_id.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.sale_order_id.currency_id or quotation_request.quotation_id.currency_id}'/></td>
                                         </tr>
                                     </table>
                                 </div>
@@ -303,6 +299,72 @@
                                     </a>
                                 </t>
                             </t>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="view_full_quotation" name="View Full Quotation">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Quotation - <t t-esc="quotation.name"/></h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>Sale Information</h4>
+                                <p><strong>Date:</strong> <span t-field="quotation.date_order"/></p>
+                                <p><strong>Expiration Date:</strong> <span t-field="quotation.validity_date"/></p>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Invoicing and Shipping Address</h4>
+                                <address t-field="quotation.partner_id" t-options='{"widget": "contact", "fields": ["address", "name", "phone", "email"]}'/>
+                            </div>
+                        </div>
+                        <h4 class="mt-4">Products</h4>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Taxes</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="quotation.order_line" t-as="line">
+                                    <tr>
+                                        <td><span t-field="line.product_id.name"/></td>
+                                        <td><span t-field="line.product_uom_qty"/></td>
+                                        <td><span t-field="line.price_unit"/></td>
+                                        <td><span t-esc="', '.join(line.tax_id.mapped('name'))"/></td>
+                                        <td><span t-field="line.price_subtotal"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        <div class="row justify-content-end">
+                            <div class="col-md-4">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Untaxed Amount:</strong></td>
+                                        <td class="text-right"><span t-field="quotation.amount_untaxed"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Taxes:</strong></td>
+                                        <td class="text-right"><span t-field="quotation.amount_tax"/></td>
+                                    </tr>
+                                    <tr class="border-top">
+                                        <td><strong>Total:</strong></td>
+                                        <td class="text-right"><span t-field="quotation.amount_total"/></td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

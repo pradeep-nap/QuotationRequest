@@ -12,6 +12,7 @@ class QuotationRequest(models.Model, MailThread):
     delivery_deadline = fields.Date(string='Delivery Deadline')
     state = fields.Selection([
         ('draft', 'Draft'),
+        ('in_progress', 'In Progress'),
         ('submitted', 'Submitted'),
         ('validated', 'Validated'),
         ('quotation_sent', 'Quotation Sent'),
@@ -24,6 +25,7 @@ class QuotationRequest(models.Model, MailThread):
     message_ids = fields.One2many('mail.message', 'res_id', string='Messages')
     quotation_id = fields.Many2one('sale.order', string='Generated Quotation', readonly=True)
     user_id = fields.Many2one('res.users', string='Requester', default=lambda self: self.env.user)
+    sale_order_id = fields.Many2one('sale.order', string='Sales Order', readonly=True)
 
     @api.model
     def create(self, vals):
@@ -38,48 +40,9 @@ class QuotationRequest(models.Model, MailThread):
     def action_validate(self):
         self.ensure_one()
         if self.state == 'submitted':
-            self.state = 'validated'
+            self.write({'state': 'validated'})
             # Add any additional logic for validation here
 
-    def action_create_rfq(self):
-        self.ensure_one()
-        if self.state != 'validated':
-            return
-
-        PurchaseOrder = self.env['purchase.order']
-        order_lines = []
-        for line in self.line_ids:
-            order_lines.append((0, 0, {
-                'product_id': line.product_id.id,
-                'name': line.product_id.name,
-                'product_qty': line.quantity,
-                'product_uom': line.product_id.uom_po_id.id,
-                'price_unit': line.product_id.standard_price,
-                'date_planned': fields.Date.today(),
-            }))
-
-        rfq = PurchaseOrder.create({
-            'partner_id': self.partner_id.id,
-            'origin': self.name,
-            'order_line': order_lines,
-        })
-
-        self.write({
-            'state': 'rfq_created',
-            'purchase_order_id': rfq.id
-        })
-
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'purchase.order',
-            'res_id': rfq.id,
-            'view_mode': 'form',
-            'target': 'current',
-        }
-    def action_confirm_rfq(self):
-        if self.purchase_order_id and self.purchase_order_id.state == 'draft':
-            self.purchase_order_id.button_confirm()
-            self.write({'state': 'confirmed'})
 
     def generate_quotation(self):
         self.ensure_one()
@@ -138,7 +101,7 @@ class QuotationRequest(models.Model, MailThread):
         self.ensure_one()
         if self.quotation_id and self.quotation_id.state == 'draft':
             self.quotation_id.action_confirm()
-            self.write({'state': 'confirmed'})
+        self.write({'state': 'confirmed'})
 
 class QuotationRequestLine(models.Model):
     _name = 'quotation.request.line'
