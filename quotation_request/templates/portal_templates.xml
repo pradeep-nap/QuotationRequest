@@ -25,287 +25,281 @@
     </template>
     <template id="quotation_request_list" name="Quotation Request List">
         <t t-call="portal.portal_layout">
-            <div class="container mt-4">
-                <div class="row align-items-center mb-4">
-                    <div class="col">
-                        <h1 class="mb-0">My Quotation Requests</h1>
-                    </div>
-                    <div class="col-auto">
-                        <a href="/my/quotations/new" class="btn btn-primary">
-                            <i class="fa fa-plus-circle"></i> New Request
-                        </a>
-                    </div>
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="wrapper col-12 d-flex flex-wrap justify-content-between align-items-center">
+                <h2 class="frontend">My Quotation Requests</h2>
+                <a href="/my/quotations/new" class="btn btn-primary px-3 py-2 d-flex align-items-center gap-2 ms-auto">
+                    <i class="fa fa-plus"></i> New
+                </a>
+            </div>
+
+            <t t-if="not requests">
+                <div class="alert alert-info" role="alert">
+                    There are no quotation requests.
                 </div>
-                <div class="table-responsive shadow rounded">
-                    <t t-call="portal.portal_table">
-                        <thead class="thead-light">
-                            <tr class="bg-primary text-white">
-                                <th style="padding: 10px 15px;">Reference</th>
-                                <th style="padding: 10px 15px;">Date</th>
-                                <th style="padding: 10px 15px;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <t t-foreach="requests" t-as="request">
-                                <tr>
-                                    <td style="padding: 10px 15px;">
-                                        <a t-att-href="'/my/quotations/%s' % request.id" class="text-primary text-bold">
+            </t>
+            <div class="mt-4">
+                <t t-if="requests" t-call="portal.portal_table">
+                    <thead>
+                        <tr class="active">
+                            <th>Reference</th>
+                            <th>Delivery Deadline</th>
+                            <th>Status</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="requests" t-as="request">
+                            <tr>
+                                <td>
+                                    <a t-attf-href="/my/quotations/#{request.id}">
                                         <t t-esc="request.name"/>
-                                        </a>
-                                    </td>
-                                    <td style="padding: 10px 15px;">
-                                        <span t-field="request.date_request" t-options='{"widget": "date"}'/>
-                                    </td>
-                                    <td style="padding: 10px 15px;">
-                                        <t t-esc="state_mapping.get(request.state, '')"/>
-                                    </td>
-                                </tr>
-                            </t>
-                            <t t-if="not requests">
-                                <tr class="text-center">
-                                    <td colspan="6">No data found</td>
-                                </tr>
-                            </t>
-                        </tbody>
-                    </t>
-                </div>
+                                    </a>
+                                </td>
+                                <td><span t-field="request.delivery_deadline"/></td>
+                                <td>
+                                    <span t-field="request.state" t-options='{"widget": "badge", "className": "badge-info"}'/>
+                                </td>
+                                <td class="text-right">
+                                    <span t-field="request.amount_total" t-options='{"widget": "monetary", "display_currency": request.currency_id}'/>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </t>
             </div>
         </t>
     </template>
     
     <template id="create_quotation_request" name="Create Quotation Request">
-        <xpath expr="." position="inside">
-            <link rel="stylesheet" href="/quotation_request/static/src/css/addProduct.css"/>
-        </xpath>
         <t t-call="portal.portal_layout">
             <div class="container mt-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h1 class="h3 mb-0">New Quotation Request</h1>
-                    </div>
-                    <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8 offset-lg-2">
                         <form action="/my/quotations/submit" method="post" class="js_website_submit_form">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-
-                            <div id="product-lines" class="mb-3">
-                                <!-- Product lines will be added here -->
-                            </div>
-                            <!-- Delivery Deadline Section -->
-                            <div class="form-group">
-                                <label for="delivery_deadline" class="font-weight-bold">Delivery Deadline</label>
-                                <div class="date-box" onclick="document.getElementById('delivery_deadline').click();">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">
-                                            <i class="fa fa-calendar"></i>
-                                        </span>
+                            <input type="hidden" id="line_count" name="line_count" value="0"/>
+                            
+                            <div class="card shadow-sm">
+                                <div class="card-body p-4">
+                                    <h2 class="card-title mb-4">Create Quotation Request</h2>
+                                    
+                                    <div class="form-group mb-4">
+                                        <label for="delivery_deadline" class="form-label">Delivery Deadline</label>
+                                        <input type="date" class="form-control" id="delivery_deadline" name="delivery_deadline" required="required" t-att-min="min_date"/>
                                     </div>
-                                    <input type="date" name="delivery_deadline" id="delivery_deadline" class="form-control" required="required" t-att-min="min_date"/>
+                                    
+                                    <div id="product-lines" class="mb-4">
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-outline-primary mb-4" onclick="addProductLine()">
+                                        <i class="fa fa-plus me-2"></i> Add Product
+                                    </button>
+                                    
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary px-4">Submit Request</button>
+                                    </div>
                                 </div>
                             </div>
-
-                            <!-- Add Product Button -->
-                            <div class="text-right mb-3">
-                                <button type="button" class="btn btn-success" onclick="addProductLine()">
-                                    <i class="fa fa-plus-circle"></i> Add Product
-                                </button>
-                            </div>
-                            <input type="hidden" name="line_count" id="line_count" value="0"/>
-
-                            <!-- Submit and Cancel Buttons -->
-                            <div class="submit-cancel-wrapper">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-check"></i> Submit Request
-                                </button>
-                                <a href="/my/quotations" class="btn btn-secondary">
-                                    <i class="fa fa-times"></i> Cancel
-                                </a>
-                            </div>
                         </form>
-
-                        <script type="text/javascript">
-                            // Function to trigger calendar input when clicking on the whole date box
-                            document.querySelector('.date-box').addEventListener('click', function() {
-                                document.getElementById('delivery_deadline').focus();
-                            });
-
-                            function updateUnit(select) {
-                                var unitDisplay = select.closest('.row').querySelector('.unit-display');
-                                var selectedOption = select.options[select.selectedIndex];
-                                var unit = selectedOption.getAttribute('data-uom');
-                                unitDisplay.textContent = unit || '';
-                            }
-
-                            function addProductLine() {
-                                var lineCount = parseInt(document.getElementById('line_count').value);
-                                var newLine = document.createElement('div');
-                                newLine.className = 'card mb-3 product-line';
-                                newLine.innerHTML = `
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-5 mb-3">
-                                                <label for="product_id_${lineCount}" class="font-weight-bold">Product</label>
-                                                <select name="product_id_${lineCount}" class="form-control product-select" required="required" onchange="updateUnit(this)">
-                                                    <option value="">Select a product</option>
-                                                    <t t-foreach="products" t-as="product">
-                                                        <option t-att-value="product.id" t-att-data-uom="product.uom_id.name"><t t-esc="product.name"/></option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3 mb-3">
-                                                <label for="quantity_${lineCount}" class="font-weight-bold">Quantity</label>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-outline-secondary" type="button" onclick="decrementQuantity(this)">-</button>
-                                                    </div>
-                                                    <input type="number" name="quantity_${lineCount}" class="form-control quantity-input" required="required" min="1" value="1"/>
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity(this)">+</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2 mb-3">
-                                                <label class="font-weight-bold">Units</label>
-                                                <div class="form-control unit-display" style="background-color: #f8f9fa; border: 1px solid #ced4da;"></div>
-                                            </div>
-                                            <div class="col-md-2 d-flex align-items-end">
-                                                <button type="button" class="btn btn-danger btn-block" onclick="removeProductLine(this)">
-                                                    <i class="fa fa-trash"></i> Remove
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                                document.getElementById('product-lines').appendChild(newLine);
-                                document.getElementById('line_count').value = lineCount + 1;
-                                updateRemoveButtons();
-                            }
-
-                            function removeProductLine(button) {
-                                button.closest('.product-line').remove();
-                                updateRemoveButtons();
-                            }
-
-                            function updateRemoveButtons() {
-                                var productLines = document.querySelectorAll('.product-line');
-                                var removeButtons = document.querySelectorAll('.product-line .btn-danger');
-                                removeButtons.forEach(function(button, index) {
-                                    button.style.display = (productLines.length > 1 || index > 0) ? 'block' : 'none';
-                                });
-                            }
-
-                            function incrementQuantity(button) {
-                                var input = button.closest('.input-group').querySelector('.quantity-input');
-                                input.value = parseInt(input.value) + 1;
-                            }
-
-                            function decrementQuantity(button) {
-                                var input = button.closest('.input-group').querySelector('.quantity-input');
-                                var value = parseInt(input.value);
-                                if (value > 1) {
-                                    input.value = value - 1;
-                                }
-                            }
-
-                            // Add the first product line on page load
-                            document.addEventListener('DOMContentLoaded', function() {
-                                addProductLine();
-                            });
-
-                            // Function to refresh CSRF token
-                            function refreshCSRFToken() {
-                                fetch('/web/csrf/refresh')
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        document.querySelector('input[name="csrf_token"]').value = data.csrf_token;
-                                    });
-                            }
-
-                            // Refresh CSRF token every 50 minutes
-                            setInterval(refreshCSRFToken, 50 * 60 * 1000);
-                        </script>
                     </div>
                 </div>
             </div>
+            
+            <style>
+                .card {
+                    border-radius: 12px;
+                    border: none;
+                    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07);
+                    transition: box-shadow 0.3s ease, transform 0.3s ease;
+                }
+                .card:hover {
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1);
+                    transform: translateY(-5px);
+                }
+                .form-control, .form-select, .btn {
+                    border-radius: 8px;
+                }
+                .product-line {
+                    background-color: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 15px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                }
+                .product-line:hover {
+                    background-color: #e9ecef;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                }
+                .quantity-input {
+                    text-align: center;
+                }
+                .btn-outline-danger {
+                    transition: all 0.3s ease;
+                }
+                .btn-outline-danger:hover {
+                    transform: translateY(-2px);
+                }
+            </style>
+
+            <script type="text/javascript">
+                function addProductLine() {
+                    var productLines = document.querySelectorAll('.product-line');
+                    var lineCount = productLines.length;
+                    var newLine = document.createElement('div');
+                    newLine.className = 'product-line';
+                    newLine.innerHTML = `
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                                <label for="product_id_${lineCount}" class="form-label">Product</label>
+                                <select name="product_id_${lineCount}" class="form-select product-select" required="required" onchange="updateUnit(this)">
+                                    <option value="">Select a product</option>
+                                    <t t-foreach="products" t-as="product">
+                                        <option t-att-value="product.id" t-att-data-uom="product.uom_id.name"><t t-esc="product.name"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="quantity_${lineCount}" class="form-label">Quantity</label>
+                                <div class="input-group">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="decrementQuantity(this)">-</button>
+                                    <input type="number" name="quantity_${lineCount}" class="form-control quantity-input" required="required" min="1" value="1"/>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity(this)">+</button>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Unit</label>
+                                <div class="form-control unit-display" style="background-color: #f8f9fa;"></div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-danger w-100" onclick="removeProductLine(this)">
+                                    <i class="fa fa-trash me-2"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('product-lines').appendChild(newLine);
+                    
+                    // Show/hide remove buttons based on the number of product lines
+                    updateRemoveButtonsVisibility();
+                    
+                    var lineCount = document.getElementById('line_count');
+                    lineCount.value = parseInt(lineCount.value) + 1;
+                }
+
+                function removeProductLine(button) {
+                    button.closest('.product-line').remove();
+                    updateRemoveButtonsVisibility();
+                    
+                    var lineCount = document.getElementById('line_count');
+                    lineCount.value = parseInt(lineCount.value) - 1;
+                }
+
+                function updateRemoveButtonsVisibility() {
+                    var removeButtons = document.querySelectorAll('.product-line .btn-outline-danger');
+                    var shouldShowRemoveButtons = removeButtons.length > 1;
+                    removeButtons.forEach(button => {
+                        button.style.display = shouldShowRemoveButtons ? 'block' : 'none';
+                    });
+                }
+
+                function updateUnit(select) {
+                    var selectedOption = select.options[select.selectedIndex];
+                    var unitDisplay = select.closest('.row').querySelector('.unit-display');
+                    unitDisplay.textContent = selectedOption.dataset.uom || '';
+                }
+
+                function incrementQuantity(button) {
+                    var input = button.previousElementSibling;
+                    input.value = parseInt(input.value) + 1;
+                }
+
+                function decrementQuantity(button) {
+                    var input = button.nextElementSibling;
+                    var value = parseInt(input.value);
+                    if (value > 1) {
+                        input.value = value - 1;
+                    }
+                }
+
+                // Add this function to prepare the form before submission
+                function prepareForm() {
+                    var productLines = document.querySelectorAll('.product-line');
+                    document.getElementById('line_count').value = productLines.length;
+                    return true;
+                }
+
+                // Update the form to call prepareForm on submit
+                document.querySelector('form.js_website_submit_form').onsubmit = prepareForm;
+
+                // Initialize the form
+                document.addEventListener('DOMContentLoaded', function() {
+                    addProductLine(); // Add the first product line
+                    updateRemoveButtonsVisibility();
+                });
+            </script>
         </t>
     </template>
 
     <template id="view_quotation_request" name="View Quotation Request">
         <t t-call="portal.portal_layout">
-            <div class="container mt-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <h1 class="h3 mb-0">Quotation Request: <span t-esc="quotation_request.name"/></h1>
-                            </div>
-                        </div>
+            <div class="container">
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <h1>
+                            Quotation Request <span t-esc="quotation_request.name"/>
+                            <small class="text-muted" t-field="quotation_request.state" t-options='{"widget": "badge"}'/>
+                        </h1>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-4">
-                            <div class="col-sm-6">
-                                <p><strong>Date:</strong> <span t-field="quotation_request.date_request" t-options='{"widget": "date"}'/></p>
-                            </div>
-                            <div class="col-sm-6">
-                                <p><strong>Delivery Deadline:</strong> <span t-field="quotation_request.delivery_deadline" t-options='{"widget": "date"}'/></p>
-                            </div>
-                            <div class="col-sm-6">
-                                <p><strong>Status:</strong> <span t-esc="state_mapping.get(quotation_request.state, '')"/></p>
-                            </div>
-                        </div>
-                        
-                        <h3 class="mb-3">Requested Products</h3>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>Product</th>
-                                        <th class="text-right">Quantity</th>
-                                        <th class="text-right">Unit</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <t t-foreach="quotation_request.line_ids" t-as="line">
-                                        <tr>
-                                            <td><t t-esc="line.product_id.name"/></td>
-                                            <td class="text-right"><t t-esc="line.quantity"/></td>
-                                            <td class="text-right"><t t-esc="line.product_uom.name"/></td>
-                                        </tr>
-                                    </t>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="card-body">
-                            <!-- New Quotation Information Section -->
-                            <t t-if="quotation_request.quotation_id or quotation_request.sale_order_id">
-                                <h3 class="mt-4">Generated Quotation</h3>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <tr>
-                                            <th>Number:</th>
-                                            <td><t t-esc="quotation_request.sale_order_id.name or quotation_request.quotation_id.name"/></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Date:</th>
-                                            <td><t t-esc="quotation_request.sale_order_id.date_order or quotation_request.quotation_id.date_order" t-options='{"widget": "date"}'/></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Total Amount:</th>
-                                            <td><t t-esc="quotation_request.sale_order_id.amount_total or quotation_request.quotation_id.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.sale_order_id.currency_id or quotation_request.quotation_id.currency_id}'/></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <t t-if="quotation_request.state == 'quotation_sent'">
-                                    <a t-att-href="'/my/quotations/%s/accept' % quotation_request.id" class="btn btn-primary">
-                                        <i class="fa fa-check"></i> Accept Quotation
-                                    </a>
-                                    <a t-att-href="'/my/quotations/%s/reject' % quotation_request.id" class="btn btn-danger">
-                                        <i class="fa fa-times"></i> Reject Quotation
-                                    </a>
-                                </t>
-                            </t>
-                        </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <strong>Date:</strong> <span t-field="quotation_request.date_request"/>
+                        <br/>
+                        <strong>Delivery Deadline:</strong> <span t-field="quotation_request.delivery_deadline"/>
                     </div>
+                    <div class="col-md-6 text-right">
+                        <strong>Total Amount:</strong>
+                        <span t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/>
+                    </div>
+                </div>
+                <h3 class="mt-4">Requested Products</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-right">Quantity</th>
+                            <th>Unit</th>
+                            <th class="text-right">Unit Price</th>
+                            <th class="text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="quotation_request.line_ids" t-as="line">
+                            <tr>
+                                <td><span t-field="line.product_id.name"/></td>
+                                <td class="text-right"><span t-field="line.quantity"/></td>
+                                <td><span t-field="line.product_uom.name"/></td>
+                                <td class="text-right"><span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                <td class="text-right"><span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-right"><strong>Total</strong></td>
+                            <td class="text-right"><strong t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div t-if="quotation_request.state == 'quotation_sent'" class="mt-4">
+                    <a t-att-href="'/my/quotations/%s/accept' % quotation_request.id" class="btn btn-primary">
+                        Accept Quotation
+                    </a>
+                    <a t-att-href="'/my/quotations/%s/reject' % quotation_request.id" class="btn btn-danger">
+                        Reject Quotation
+                    </a>
                 </div>
             </div>
         </t>

@@ -56,7 +56,7 @@ class QuotationRequestController(http.Controller):
             quotation_request = request.env['quotation.request'].sudo().create(values)
             return request.redirect('/my/quotations')
         else:
-            return request.redirect('/my/quotations/create?error=no_products')
+            return request.redirect('/my/quotations/new?error=no_products')
 
     @http.route('/my/quotations/<int:request_id>', type='http', auth='user', website=True)
     def view_quotation_request(self, request_id, **kw):
@@ -88,7 +88,7 @@ class QuotationRequestController(http.Controller):
                 quotation_request.quotation_id.action_confirm()
                 sale_order = quotation_request.quotation_id.copy({'state': 'sale'})
                 quotation_request.write({
-                    'state': 'confirmed',
+                    'state': 'validated',  # Changed from 'confirmed' to 'validated'
                     'sale_order_id': sale_order.id
                 })
         return request.redirect('/my/quotations/%s' % request_id)

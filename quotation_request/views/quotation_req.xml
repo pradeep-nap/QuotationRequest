@@ -4,10 +4,13 @@
         <field name="name">quotation.request.list.view</field>
         <field name="model">quotation.request</field>
         <field name="arch" type="xml">
-            <tree string="Quotation Requests" default_order="create_date desc">
+            <tree string="Quotation Requests" default_order="create_date desc" decoration-info="state == 'draft'" decoration-muted="state == 'cancelled'" decoration-success="state == 'validated'">
                 <field name="name" string="Reference"/>
+                <field name="partner_id"/>
                 <field name="date_request" string="Date"/>
-                <field name="state" string="Status"/>
+                <field name="delivery_deadline"/>
+                <field name="amount_total" sum="Total Amount"/>
+                <field name="state" string="Status" widget="badge" decoration-info="state in ('draft', 'submitted')" decoration-success="state == 'validated'" decoration-warning="state == 'quotation_sent'" decoration-danger="state == 'cancelled'"/>
             </tree>
         </field>
     </record>
@@ -21,47 +24,88 @@
                     <button name="action_submit" string="Submit" type="object" 
                             class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_validate" string="Validate" type="object" 
-                            invisible="state != 'submitted'"/>
+                            class="btn-primary" invisible="state != 'submitted'"/>
                     <button name="generate_quotation" string="Generate Quotation" type="object" 
-                            invisible="state != 'validated'"/>
-                    <field name="state" widget="statusbar"/>
+                            class="btn-primary" invisible="state != 'validated'"/>
+                    <button name="action_cancel" string="Cancel" type="object" 
+                            invisible="state in ('cancelled', 'quotation_sent')"/>
+                    <button name="action_reset_to_draft" string="Reset to Draft" type="object" 
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" options="{'clickable': '1'}" statusbar_visible="draft,submitted,validated,quotation_sent"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_quotation" type="object" class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="not quotation_id">
+                            <field name="quotation_id" string="Quotation" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
                     <group>
                         <group>
-                            <field name="name"/>
-                            <field name="partner_id"/>
+                            <field name="partner_id" options="{'no_create': True}"/>
                             <field name="date_request"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                         </group>
                         <group>
                             <field name="delivery_deadline"/>
-                            <field name="purchase_order_id" readonly="1"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Request Lines">
-                            <field name="line_ids">
+                            <field name="line_ids" widget="section_and_note_one2many">
                                 <tree editable="bottom">
+                                    <control>
+                                        <create string="Add a product"/>
+                                    </control>
                                     <field name="product_id"/>
+                                    <field name="name"/>
                                     <field name="quantity"/>
                                     <field name="product_uom" groups="uom.group_uom"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal" sum="Subtotal"/>
                                 </tree>
                                 <form>
                                     <group>
-                                        <field name="product_id"/>
-                                        <label for="quantity"/>
-                                        <div class="o_row">
-                                            <field name="quantity"/>
-                                            <field name="product_uom" groups="uom.group_uom"/>
-                                        </div>
+                                        <group>
+                                            <field name="product_id"/>
+                                            <field name="name"/>
+                                            <label for="quantity"/>
+                                            <div class="o_row">
+                                                <field name="quantity"/>
+                                                <field name="product_uom" groups="uom.group_uom"/>
+                                            </div>
+                                        </group>
+                                        <group>
+                                            <field name="price_unit"/>
+                                            <field name="price_subtotal"/>
+                                        </group>
                                     </group>
                                 </form>
                             </field>
+                        </page>
+                        <page string="Other Information">
+                            <group>
+                                <group>
+                                    <field name="user_id"/>
+                                </group>
+                                <group>
+                                    <field name="create_date" readonly="1"/>
+                                    <field name="write_date" readonly="1"/>
+                                </group>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
                     <field name="message_ids" widget="mail_thread"/>
                 </div>
             </form>
@@ -87,7 +131,7 @@
 
     <menuitem id="quotation_request_root_menu" 
           name="Quotation Requests"
-          web_icon="quotation_request,static/src/img/quot.png"
+          web_icon="quotation_request,static/description/icon.png"
           sequence="50"/>
 
     <menuitem id="quotation_request_list_menu"

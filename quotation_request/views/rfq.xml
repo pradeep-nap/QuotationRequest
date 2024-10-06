@@ -43,6 +43,6 @@
 
     <menuitem id="menu_quotation_requests" name="Quotation Requests" 
               action="action_quotation_requests" 
-              parent="purchase.menu_procurement_management" 
+              parent="sale.sale_menu_root" 
               sequence="5"/>
 </odoo>
