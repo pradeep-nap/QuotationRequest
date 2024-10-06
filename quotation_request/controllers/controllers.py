@@ -1,21 +1,22 @@
 from odoo import http, fields
-from odoo.http import request 
+from odoo.http import request
 
 class QuotationRequestController(http.Controller):
     STATE_MAPPING = {
         'draft': 'Draft',
         'submitted': 'Submitted',
-        'validated': 'In Progress',
+        'validated': 'Validated',
+        'quotation_generated': 'Quotation Generated',
         'quotation_sent': 'Quotation Sent',
-        'confirmed': 'Confirmed',
-        'rejected': 'Rejected'
+        'accepted': 'Accepted',
+        'rejected': 'Rejected',
+        'cancelled': 'Cancelled'
     }
-        
+    
     @http.route('/my/quotations', type='http', auth='user', website=True)
     def list_quotation_requests(self, **kw):
-        requests = request.env['quotation.request'].search([('partner_id', '=', request.env.user.partner_id.id)], order='create_date desc')
+        requests = request.env['quotation.request'].search([('partner_id', '=', request.env.user.partner_id.id)])
         return request.render('quotation_request.quotation_request_list', {
-            'page_name': 'quotation_lists',
             'requests': requests,
             'state_mapping': self.STATE_MAPPING
         })
@@ -23,7 +24,7 @@ class QuotationRequestController(http.Controller):
     @http.route('/my/quotations/new', type='http', auth='user', website=True)
     def new_quotation_request(self, **kw):
         products = request.env['product.product'].search([('sale_ok', '=', True)])
-        min_date = fields.Date.today()  
+        min_date = fields.Date.today()
         return request.render('quotation_request.create_quotation_request', {
             'products': products,
             'min_date': min_date,
@@ -53,6 +54,7 @@ class QuotationRequestController(http.Controller):
                 }))
 
         if values['line_ids']:
+            values['state'] = 'draft'
             quotation_request = request.env['quotation.request'].sudo().create(values)
             return request.redirect('/my/quotations')
         else:
@@ -60,44 +62,34 @@ class QuotationRequestController(http.Controller):
 
     @http.route('/my/quotations/<int:request_id>', type='http', auth='user', website=True)
     def view_quotation_request(self, request_id, **kw):
-        quotation_request = request.env['quotation.request'].sudo().search([
-            ('id', '=', request_id),
-            ('partner_id', '=', request.env.user.partner_id.id),
-        ], limit=1)
-        if not quotation_request:
+        quotation_request = request.env['quotation.request'].sudo().browse(request_id)
+        if not quotation_request or quotation_request.partner_id != request.env.user.partner_id:
             return request.redirect('/my/quotations')
-        
         return request.render('quotation_request.view_quotation_request', {
-            'page_name': 'view_quotation',
             'quotation_request': quotation_request,
             'state_mapping': self.STATE_MAPPING
         })
 
-    @http.route(['/my/quotations/<int:quotation_id>/validate'], type='http', auth="user", website=True)
-    def validate_quotation_request(self, quotation_id, **post):
-        quotation_request = request.env['quotation.request'].sudo().browse(quotation_id)
-        if quotation_request.exists() and quotation_request.state in ['draft', 'submitted']:
+    @http.route(['/my/quotations/<int:request_id>/validate'], type='http', auth="user", website=True)
+    def validate_quotation_request(self, request_id, **post):
+        quotation_request = request.env['quotation.request'].sudo().browse(request_id)
+        if quotation_request.exists() and quotation_request.state == 'submitted':
             quotation_request.action_validate()
-        return request.redirect('/my/quotations/%s' % quotation_id)
+        return request.redirect('/my/quotations/%s' % request_id)
 
     @http.route(['/my/quotations/<int:request_id>/accept'], type='http', auth="user", website=True)
-    def accept_quotation(self, request_id, **post):
+    def accept_quotation_request(self, request_id, **kw):
         quotation_request = request.env['quotation.request'].sudo().browse(request_id)
-        if quotation_request.exists() and quotation_request.state == 'quotation_sent':
-            if quotation_request.quotation_id:
-                quotation_request.quotation_id.action_confirm()
-                sale_order = quotation_request.quotation_id.copy({'state': 'sale'})
-                quotation_request.write({
-                    'state': 'validated',  # Changed from 'confirmed' to 'validated'
-                    'sale_order_id': sale_order.id
-                })
+        if quotation_request.state == 'quotation_sent':
+            sale_order = quotation_request.action_accept()
+            return request.redirect('/my/orders/%s' % sale_order.id)
         return request.redirect('/my/quotations/%s' % request_id)
 
     @http.route(['/my/quotations/<int:request_id>/reject'], type='http', auth="user", website=True)
-    def reject_quotation(self, request_id, **post):
+    def reject_quotation_request(self, request_id, **kw):
         quotation_request = request.env['quotation.request'].sudo().browse(request_id)
-        if quotation_request.exists() and quotation_request.state == 'quotation_sent':
-            quotation_request.write({'state': 'rejected'})
+        if quotation_request.state == 'quotation_sent':
+            quotation_request.action_reject()
         return request.redirect('/my/quotations/%s' % request_id)
 
     @http.route('/my/quotations/<int:request_id>/full_quotation', type='http', auth='user', website=True)
@@ -112,4 +104,13 @@ class QuotationRequestController(http.Controller):
         return request.render('quotation_request.view_full_quotation', {
             'page_name': 'view_full_quotation',
             'quotation': quotation_request.quotation_id,
+        })
+
+    @http.route(['/my/quotations/<int:request_id>'], type='http', auth="user", website=True)
+    def portal_my_quotation_request(self, request_id=None, **kw):
+        quotation_request = request.env['quotation.request'].sudo().browse(request_id)
+        
+        # The total_amount should now be available directly from the model
+        return request.render("quotation_request.portal_my_quotation_request", {
+            'quotation_request': quotation_request,
         })

@@ -201,3 +201,37 @@
 .form-label {
     font-weight: 600;
 }
+
+.badge-draft { 
+    color: #3a3f44;
+    background-color: #e2e3e5;
+}
+.badge-validated { 
+    color: #155724;
+    background-color: #d4edda;
+}
+.badge-quotation_sent { 
+    color: #856404;
+    background-color: #fff3cd;
+}
+.badge-accepted { 
+    color: #0c5460;
+    background-color: #d1ecf1;
+}
+.badge-rejected { 
+    color: #721c24;
+    background-color: #f8d7da;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.85em;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 20px;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}

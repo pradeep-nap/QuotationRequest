@@ -58,7 +58,8 @@
                                 </td>
                                 <td><span t-field="request.delivery_deadline"/></td>
                                 <td>
-                                    <span t-field="request.state" t-options='{"widget": "badge", "className": "badge-info"}'/>
+                                    <span t-esc="state_mapping.get(request.state, request.state)" 
+                                          t-attf-class="badge badge-#{request.state}"/>
                                 </td>
                                 <td class="text-right">
                                     <span t-field="request.amount_total" t-options='{"widget": "monetary", "display_currency": request.currency_id}'/>
@@ -245,61 +246,58 @@
     <template id="view_quotation_request" name="View Quotation Request">
         <t t-call="portal.portal_layout">
             <div class="container">
-                <div class="row mt-4">
-                    <div class="col-md-12">
-                        <h1>
-                            Quotation Request <span t-esc="quotation_request.name"/>
-                            <small class="text-muted" t-field="quotation_request.state" t-options='{"widget": "badge"}'/>
-                        </h1>
-                    </div>
-                </div>
-                <div class="row mt-4">
+                <h2>Quotation Request <t t-esc="quotation_request.name"/></h2>
+                <div class="row">
                     <div class="col-md-6">
                         <strong>Date:</strong> <span t-field="quotation_request.date_request"/>
                         <br/>
                         <strong>Delivery Deadline:</strong> <span t-field="quotation_request.delivery_deadline"/>
                     </div>
-                    <div class="col-md-6 text-right">
-                        <strong>Total Amount:</strong>
-                        <span t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/>
+                    <div class="col-md-6">
+                        <strong>Total Amount:</strong> <span t-field="quotation_request.total_amount" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/>
+                        <br/>
+                        <strong class="mt-2 d-inline-block">Status:</strong>
+                        <span t-esc="state_mapping.get(quotation_request.state, quotation_request.state)" 
+                            class="badge badge-pill ml-2" 
+                            t-attf-class="badge-#{quotation_request.state}"/>
                     </div>
                 </div>
-                <h3 class="mt-4">Requested Products</h3>
-                <table class="table table-striped">
+                <h3>Requested Products</h3>
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Product</th>
-                            <th class="text-right">Quantity</th>
-                            <th>Unit</th>
-                            <th class="text-right">Unit Price</th>
-                            <th class="text-right">Subtotal</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
                         <t t-foreach="quotation_request.line_ids" t-as="line">
                             <tr>
                                 <td><span t-field="line.product_id.name"/></td>
-                                <td class="text-right"><span t-field="line.quantity"/></td>
-                                <td><span t-field="line.product_uom.name"/></td>
-                                <td class="text-right"><span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
-                                <td class="text-right"><span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                <td><span t-field="line.quantity"/></td>
+                                <td><span t-field="line.unit_price" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                <td><span t-field="line.subtotal" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
                             </tr>
                         </t>
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4" class="text-right"><strong>Total</strong></td>
-                            <td class="text-right"><strong t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
-                        </tr>
-                    </tfoot>
                 </table>
-                <div t-if="quotation_request.state == 'quotation_sent'" class="mt-4">
-                    <a t-att-href="'/my/quotations/%s/accept' % quotation_request.id" class="btn btn-primary">
-                        Accept Quotation
-                    </a>
-                    <a t-att-href="'/my/quotations/%s/reject' % quotation_request.id" class="btn btn-danger">
-                        Reject Quotation
-                    </a>
+
+                <div class="mt-4">
+                    <t t-if="quotation_request.state == 'submitted'">
+                        <a t-att-href="'/my/quotations/%s/validate' % quotation_request.id" class="btn btn-primary">
+                            Validate Request
+                        </a>
+                    </t>
+                    <t t-if="quotation_request.state == 'quotation_sent'">
+                        <a t-att-href="'/my/quotations/%s/accept' % quotation_request.id" class="btn btn-primary">
+                            Accept Quotation
+                        </a>
+                        <a t-att-href="'/my/quotations/%s/reject' % quotation_request.id" class="btn btn-danger">
+                            Reject Quotation
+                        </a>
+                    </t>
                 </div>
             </div>
         </t>
@@ -365,6 +363,84 @@
                                         <td class="text-right"><span t-field="quotation.amount_total"/></td>
                                     </tr>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    <template id="portal_my_quotation_request" name="My Quotation Request">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h2 class="mb-4">Quotation Request <t t-esc="quotation_request.name"/></h2>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-sm-6">
+                                        <strong>Date:</strong> <span t-field="quotation_request.date_request"/>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Delivery Deadline:</strong> <span t-field="quotation_request.delivery_deadline"/>
+                                    </div>
+                                </div>
+                                <div class="row mb-4">
+                                    <div class="col-sm-6">
+                                        <strong>Total Amount:</strong> 
+                                        <span t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Status:</strong> 
+                                        <span t-field="quotation_request.state" class="badge badge-pill" t-attf-class="badge-#{quotation_request.state}"/>
+                                    </div>
+                                </div>
+                                <h4 class="mt-4 mb-3">Requested Products</h4>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Unit Price</th>
+                                            <th class="text-right">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="quotation_request.line_ids" t-as="line">
+                                            <tr>
+                                                <td><span t-field="line.product_id.name"/></td>
+                                                <td><span t-field="line.quantity"/></td>
+                                                <td><span t-field="line.unit_price" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                                <td class="text-right"><span t-field="line.subtotal" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="3" class="text-right"><strong>Total</strong></td>
+                                            <td class="text-right"><strong t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                
+                                <!-- Show link to sales order if it exists -->
+                                <div t-if="quotation_request.sale_order_id" class="mt-4">
+                                    <strong>Sales Order:</strong>
+                                    <a t-att-href="'/my/orders/%s' % quotation_request.sale_order_id.id">
+                                        <t t-esc="quotation_request.sale_order_id.name"/>
+                                    </a>
+                                </div>
+                                
+                                <!-- Accept and Reject Buttons -->
+                                <div class="mt-4" t-if="quotation_request.state == 'quotation_sent'">
+                                    <a t-att-href="'/my/quotations/%s/accept' % quotation_request.id" class="btn btn-primary">
+                                        Accept Quotation
+                                    </a>
+                                    <a t-att-href="'/my/quotations/%s/reject' % quotation_request.id" class="btn btn-danger ml-2">
+                                        Reject Quotation
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>

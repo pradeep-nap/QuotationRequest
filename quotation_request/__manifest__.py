@@ -5,7 +5,7 @@
     'sequence': -100,
     'description': """Quotation Request Management System""",
     'category': 'Sales',
-    'website': 'https://www.yourwebsite.com',
+    'website': 'https://www.dfwitpartner.com',
     'depends': ['base', 'sale', 'purchase'],
     'data': [
         'security/ir.model.access.csv',

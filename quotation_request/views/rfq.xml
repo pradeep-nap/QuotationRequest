@@ -5,13 +5,23 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_submit" string="Submit" type="object" 
-                            class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_validate" string="Validate" type="object" 
-                            invisible="state != 'submitted'"/>
-                    <button name="generate_quotation" string="Generate Quotation" type="object" 
-                            invisible="state != 'validated'"/>
-                    <field name="state" widget="statusbar"/>
+                            invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_generate_quotation" string="Generate Quotation" type="object"
+                            invisible="state != 'validated'" class="oe_highlight"/>
+                    <button name="action_send_quotation" string="Send Quotation" type="object"
+                            invisible="state != 'quotation_generated'" class="oe_highlight"/>
+                    <button name="action_accept_quotation" string="Accept Quotation" type="object"
+                            invisible="state != 'quotation_sent'" class="oe_highlight"/>
+                    <button name="action_reject_quotation" string="Reject Quotation" type="object"
+                            invisible="state != 'quotation_sent'"/>
+                    <button name="action_view_quotation" string="View Quotation" type="object"
+                            invisible="not quotation_id" class="oe_highlight"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            invisible="state in ('cancelled', 'accepted', 'rejected')"/>
+                    <button name="action_reset_to_draft" string="Reset to Draft" type="object"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,validated,quotation_generated,quotation_sent,accepted,rejected"/>
                 </header>
                 <sheet>
                     <group>
