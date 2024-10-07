@@ -27,12 +27,10 @@
                             invisible="state != 'validated'" class="oe_highlight"/>
                     <button name="action_send_quotation" string="Send Quotation" type="object"
                             invisible="state != 'quotation_generated'" class="oe_highlight"/>
-                    <button name="action_accept_quotation" string="Accept Quotation" type="object"
+                    <button name="action_accept" string="Accept Quotation" type="object"
                             invisible="state != 'quotation_sent'" class="oe_highlight"/>
-                    <button name="action_reject_quotation" string="Reject Quotation" type="object"
+                    <button name="action_reject" string="Reject Quotation" type="object"
                             invisible="state != 'quotation_sent'"/>
-                    <button name="action_view_quotation" string="View Quotation" type="object"
-                            invisible="not quotation_id" class="oe_highlight"/>
                     <button name="action_cancel" string="Cancel" type="object"
                             invisible="state in ('cancelled', 'accepted', 'rejected')"/>
                     <button name="action_reset_to_draft" string="Reset to Draft" type="object"
@@ -44,6 +42,10 @@
                         <button name="action_view_quotation" type="object" class="oe_stat_button" icon="fa-file-text-o"
                                 invisible="not quotation_id">
                             <field name="quotation_id" string="Quotation" widget="statinfo"/>
+                        </button>
+                        <button name="action_view_sale_order" type="object" class="oe_stat_button" icon="fa-usd"
+                                invisible="not sale_order_id">
+                            <field name="sale_order_id" string="Sales Order" widget="statinfo"/>
                         </button>
                     </div>
                     <div class="oe_title">

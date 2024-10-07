@@ -145,36 +145,59 @@ class QuotationRequest(models.Model, MailThread):
     def action_accept(self):
         self.ensure_one()
         if self.state == 'quotation_sent':
-            # Create a new sale order
-            sale_order = self.env['sale.order'].create({
-                'partner_id': self.partner_id.id,
-                'date_order': fields.Datetime.now(),
-                'origin': self.name,
-                # Add other necessary fields
-            })
-
-            # Create sale order lines
-            for line in self.line_ids:
-                self.env['sale.order.line'].create({
-                    'order_id': sale_order.id,
-                    'product_id': line.product_id.id,
-                    'product_uom_qty': line.quantity,
-                    'price_unit': line.unit_price,
+            if not self.sale_order_id:
+                # Create a new sale order if it doesn't exist
+                sale_order = self.env['sale.order'].create({
+                    'partner_id': self.partner_id.id,
+                    'date_order': fields.Datetime.now(),
+                    'origin': self.name,
                     # Add other necessary fields
                 })
 
-            # Link the sale order to the quotation request
+                # Create sale order lines
+                for line in self.line_ids:
+                    self.env['sale.order.line'].create({
+                        'order_id': sale_order.id,
+                        'product_id': line.product_id.id,
+                        'product_uom_qty': line.quantity,
+                        'price_unit': line.unit_price,
+                        # Add other necessary fields
+                    })
+
+                self.sale_order_id = sale_order
+            else:
+                sale_order = self.sale_order_id
+
+            # Update the quotation request state
             self.write({
                 'state': 'accepted',
-                'sale_order_id': sale_order.id
             })
 
-            return sale_order
+            # Redirect to the sign and pay interface
+            return {
+                'type': 'ir.actions.act_url',
+                'url': f'/my/orders/{sale_order.id}?access_token={sale_order.access_token}#sign',
+                'target': 'self',
+            }
+        else:
+            raise UserError(_("You can only accept quotations that have been sent."))
 
     def action_reject(self):
         self.ensure_one()
         if self.state == 'quotation_sent':
             self.write({'state': 'rejected'})
+
+    def action_view_sale_order(self):
+        self.ensure_one()
+        if self.sale_order_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'sale.order',
+                'view_mode': 'form',
+                'res_id': self.sale_order_id.id,
+                'target': 'current',
+            }
+        return True
 
 class QuotationRequestLine(models.Model):
     _name = 'quotation.request.line'

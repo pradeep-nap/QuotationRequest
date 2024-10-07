@@ -81,8 +81,9 @@ class QuotationRequestController(http.Controller):
     def accept_quotation_request(self, request_id, **kw):
         quotation_request = request.env['quotation.request'].sudo().browse(request_id)
         if quotation_request.state == 'quotation_sent':
-            sale_order = quotation_request.action_accept()
-            return request.redirect('/my/orders/%s' % sale_order.id)
+            action = quotation_request.action_accept()
+            if isinstance(action, dict) and action.get('type') == 'ir.actions.act_url':
+                return request.redirect(action['url'])
         return request.redirect('/my/quotations/%s' % request_id)
 
     @http.route(['/my/quotations/<int:request_id>/reject'], type='http', auth="user", website=True)
