@@ -17,6 +17,7 @@ class QuotationRequest(models.Model, MailThread):
     amount_total = fields.Float(string='Total Amount', compute='_compute_amount_total', store=True)
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
     quotation_id = fields.Many2one('sale.order', string='Quotation', readonly=True)
+    sale_order_id = fields.Many2one('sale.order', string='Sales Order', readonly=True)
     
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -173,15 +174,22 @@ class QuotationRequest(models.Model, MailThread):
                 'state': 'accepted',
             })
 
-            # Confirm the quotation
-            quotation.action_confirm()
-
-            # Redirect to the quotation page
-            return {
-                'type': 'ir.actions.act_url',
-                'url': f'/my/quotes/{quotation.id}',
-                'target': 'self',
-            }
+            # Check if it's a "Sign & Pay" action
+            if self.env.context.get('sign_and_pay'):
+                # Confirm the quotation immediately
+                quotation.action_confirm()
+                return {
+                    'type': 'ir.actions.act_url',
+                    'url': f'/my/orders/{quotation.id}',
+                    'target': 'self',
+                }
+            else:
+                # For regular accept, redirect to the quotation page
+                return {
+                    'type': 'ir.actions.act_url',
+                    'url': f'/my/quotes/{quotation.id}',
+                    'target': 'self',
+                }
         else:
             raise UserError(_("You can only accept quotations that have been sent."))
 
@@ -244,3 +252,19 @@ class QuotationRequestLine(models.Model):
     def _compute_subtotal(self):
         for line in self:
             line.subtotal = line.quantity * line.unit_price
+
+class SaleOrder(models.Model):
+    _inherit = 'sale.order'
+
+    def action_quotation_send(self):
+        self.ensure_one()
+        res = super(SaleOrder, self).action_quotation_send()
+
+        # Find the related quotation request
+        quotation_request = self.env['quotation.request'].search([('quotation_id', '=', self.id)], limit=1)
+        
+        if quotation_request:
+            # Call the action_send_quotation method on the quotation request
+            quotation_request.action_send_quotation()
+
+        return res

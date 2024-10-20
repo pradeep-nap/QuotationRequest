@@ -1,5 +1,10 @@
 from odoo import http, fields
 from odoo.http import request
+from odoo.addons.portal.controllers.portal import CustomerPortal
+from werkzeug.exceptions import NotFound
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class QuotationRequestController(http.Controller):
     STATE_MAPPING = {
@@ -81,10 +86,18 @@ class QuotationRequestController(http.Controller):
     @http.route(['/my/quotations/<int:request_id>/accept'], type='http', auth="user", website=True)
     def accept_quotation_request(self, request_id, **kw):
         quotation_request = request.env['quotation.request'].sudo().browse(request_id)
-        if quotation_request.state == 'quotation_sent':
+        _logger.info(f"Accepting quotation request {request_id}, state: {quotation_request.state}")
+        if quotation_request.exists() and quotation_request.state == 'quotation_sent':
             action = quotation_request.action_accept()
-            if isinstance(action, dict) and action.get('type') == 'ir.actions.act_url':
-                return request.redirect(action['url'])
+            _logger.info(f"Action accept result: {action}")
+            if quotation_request.quotation_id:
+                _logger.info(f"Redirecting to quotation {quotation_request.quotation_id.id}")
+                return request.redirect('/my/orders/%s' % quotation_request.quotation_id.id)
+            else:
+                _logger.warning(f"No quotation_id found after accepting request {request_id}")
+        else:
+            _logger.warning(f"Cannot accept request {request_id}, state: {quotation_request.state}")
+        
         return request.redirect('/my/quotations/%s' % request_id)
 
     @http.route(['/my/quotations/<int:request_id>/reject'], type='http', auth="user", website=True)
