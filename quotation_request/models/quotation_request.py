@@ -145,38 +145,41 @@ class QuotationRequest(models.Model, MailThread):
     def action_accept(self):
         self.ensure_one()
         if self.state == 'quotation_sent':
-            if not self.sale_order_id:
-                # Create a new sale order if it doesn't exist
-                sale_order = self.env['sale.order'].create({
+            if not self.quotation_id:
+                # Create a new quotation if it doesn't exist
+                quotation = self.env['sale.order'].create({
                     'partner_id': self.partner_id.id,
                     'date_order': fields.Datetime.now(),
                     'origin': self.name,
                     # Add other necessary fields
                 })
 
-                # Create sale order lines
+                # Create quotation lines
                 for line in self.line_ids:
                     self.env['sale.order.line'].create({
-                        'order_id': sale_order.id,
+                        'order_id': quotation.id,
                         'product_id': line.product_id.id,
                         'product_uom_qty': line.quantity,
                         'price_unit': line.unit_price,
                         # Add other necessary fields
                     })
 
-                self.sale_order_id = sale_order
+                self.quotation_id = quotation
             else:
-                sale_order = self.sale_order_id
+                quotation = self.quotation_id
 
             # Update the quotation request state
             self.write({
                 'state': 'accepted',
             })
 
-            # Redirect to the sign and pay interface
+            # Confirm the quotation
+            quotation.action_confirm()
+
+            # Redirect to the quotation page
             return {
                 'type': 'ir.actions.act_url',
-                'url': f'/my/orders/{sale_order.id}?access_token={sale_order.access_token}#sign',
+                'url': f'/my/quotes/{quotation.id}',
                 'target': 'self',
             }
         else:
@@ -204,6 +207,27 @@ class QuotationRequest(models.Model, MailThread):
         for record in self:
             if record.state in ['draft', 'validated'] and record.quotation_id:
                 raise ValidationError(_("A quotation cannot exist for a request in draft or validated state."))
+
+    def action_view_sales_order(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.order',
+            'view_mode': 'form',
+            'res_id': self.sale_order_id.id,
+            'target': 'current',
+        }
+
+    # You'll need to implement the logic to convert quotation to sales order
+    # This could be in a separate method called from your controller
+    def convert_to_sales_order(self):
+        self.ensure_one()
+        if self.state == 'quotation_sent' and self.quotation_id:
+            sale_order = self.quotation_id.action_confirm()
+            self.write({
+                'state': 'sales_order',
+                'sale_order_id': sale_order.id,
+            })
 
 class QuotationRequestLine(models.Model):
     _name = 'quotation.request.line'

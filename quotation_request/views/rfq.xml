@@ -21,7 +21,7 @@
                             invisible="state in ('cancelled', 'accepted', 'rejected')"/>
                     <button name="action_reset_to_draft" string="Reset to Draft" type="object"
                             invisible="state != 'cancelled'"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,validated,quotation_generated,quotation_sent,accepted,rejected"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,validated,quotation_generated,quotation_sent,rejected"/>
                 </header>
                 <sheet>
                     <group>
