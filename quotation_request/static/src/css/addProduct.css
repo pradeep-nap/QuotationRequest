@@ -145,19 +145,12 @@
 
 /* Card and form styles */
 .card {
-    border-radius: 15px;
-    border: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    border: 1px solid #dee2e6;
+    box-shadow: none;
+    transition: none;
 }
 
 .card-header {
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
     background-color: #007bff;
     color: white;
     padding: 1rem 1.5rem;
@@ -167,35 +160,23 @@
     padding: 2rem;
 }
 
-.form-control, .form-select, .btn {
-    border-radius: 10px;
-}
-
 .product-line {
     background-color: #f8f9fa;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
-    transition: all 0.3s ease;
+    transition: none;
     border: 1px solid #e9ecef;
 }
 
 .product-line:hover {
-    background-color: #e9ecef;
-    transform: translateY(-2px);
+    background-color: #f8f9fa;
+    transform: none;
 }
 
 .quantity-input {
     text-align: center;
     font-weight: bold;
-}
-
-.btn-outline-danger {
-    transition: all 0.3s ease;
-}
-
-.btn-outline-danger:hover {
-    transform: translateY(-2px);
 }
 
 .form-label {

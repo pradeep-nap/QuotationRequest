@@ -40,7 +40,7 @@
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_quotation" type="object" class="oe_stat_button" icon="fa-file-text-o"
-                                invisible="not quotation_id">
+                                invisible="not quotation_id or state in ('draft', 'validated')">
                             <field name="quotation_id" string="Quotation" widget="statinfo"/>
                         </button>
                         <button name="action_view_sale_order" type="object" class="oe_stat_button" icon="fa-usd"
