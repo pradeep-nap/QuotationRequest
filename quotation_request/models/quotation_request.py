@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.addons.mail.models.mail_thread import MailThread
 
 class QuotationRequest(models.Model, MailThread):
@@ -16,7 +16,7 @@ class QuotationRequest(models.Model, MailThread):
     currency_id = fields.Many2one('res.currency', string='Currency', default=lambda self: self.env.company.currency_id)
     amount_total = fields.Float(string='Total Amount', compute='_compute_amount_total', store=True)
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
-    quotation_id = fields.Many2one('sale.order', string='Quotation', compute='_compute_quotation_id', store=True)
+    quotation_id = fields.Many2one('sale.order', string='Quotation', readonly=True)
     
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -30,13 +30,13 @@ class QuotationRequest(models.Model, MailThread):
 
     line_ids = fields.One2many('quotation.request.line', 'request_id', string='Request Lines')
 
-    @api.depends('line_ids.subtotal', 'quotation_id.amount_total')
+    @api.depends('quotation_id.amount_total')
     def _compute_amount_total(self):
         for request in self:
             if request.quotation_id:
                 request.amount_total = request.quotation_id.amount_total
             else:
-                request.amount_total = sum(request.line_ids.mapped('subtotal'))
+                request.amount_total = 0.0
 
     @api.model
     def create(self, vals):
@@ -199,6 +199,12 @@ class QuotationRequest(models.Model, MailThread):
             }
         return True
 
+    @api.constrains('state', 'quotation_id')
+    def _check_quotation_state(self):
+        for record in self:
+            if record.state in ['draft', 'validated'] and record.quotation_id:
+                raise ValidationError(_("A quotation cannot exist for a request in draft or validated state."))
+
 class QuotationRequestLine(models.Model):
     _name = 'quotation.request.line'
     _description = 'Quotation Request Line'
@@ -206,17 +212,11 @@ class QuotationRequestLine(models.Model):
     request_id = fields.Many2one('quotation.request', string='Quotation Request')
     product_id = fields.Many2one('product.product', string='Product')
     quantity = fields.Float(string='Quantity', default=1.0)
-    unit_price = fields.Float(string='Unit Price')
-    subtotal = fields.Float(string='Subtotal', compute='_compute_subtotal', store=True)
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure', related='product_id.uom_id')
+    unit_price = fields.Float(string='Unit Price', digits='Product Price')
+    subtotal = fields.Float(string='Subtotal', compute='_compute_subtotal', store=True)
 
     @api.depends('quantity', 'unit_price')
     def _compute_subtotal(self):
         for line in self:
             line.subtotal = line.quantity * line.unit_price
-
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        if self.product_id:
-            self.name = self.product_id.name
-            self.unit_price = self.product_id.list_price

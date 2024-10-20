@@ -16,7 +16,7 @@
                     <button name="action_reject_quotation" string="Reject Quotation" type="object"
                             invisible="state != 'quotation_sent'"/>
                     <button name="action_view_quotation" string="View Quotation" type="object"
-                            invisible="not quotation_id" class="oe_highlight"/>
+                            invisible="not quotation_id or state in ('draft', 'validated')" class="oe_highlight"/>
                     <button name="action_cancel" string="Cancel" type="object"
                             invisible="state in ('cancelled', 'accepted', 'rejected')"/>
                     <button name="action_reset_to_draft" string="Reset to Draft" type="object"

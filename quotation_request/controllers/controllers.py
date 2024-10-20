@@ -67,7 +67,8 @@ class QuotationRequestController(http.Controller):
             return request.redirect('/my/quotations')
         return request.render('quotation_request.view_quotation_request', {
             'quotation_request': quotation_request,
-            'state_mapping': self.STATE_MAPPING
+            'state_mapping': self.STATE_MAPPING,
+            'quotation_id': quotation_request.quotation_id,
         })
 
     @http.route(['/my/quotations/<int:request_id>/validate'], type='http', auth="user", website=True)
