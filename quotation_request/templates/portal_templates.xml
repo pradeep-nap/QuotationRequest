@@ -429,8 +429,10 @@
                                         <tr>
                                             <th>Product</th>
                                             <th>Quantity</th>
-                                            <th>Unit Price</th>
-                                            <th class="text-right">Subtotal</th>
+                                            <t t-if="quotation_request.state not in ['draft', 'validated', 'quotation_generated']">
+                                                <th>Unit Price</th>
+                                                <th class="text-right">Subtotal</th>
+                                            </t>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -438,18 +440,31 @@
                                             <tr>
                                                 <td><span t-field="line.product_id.name"/></td>
                                                 <td><span t-field="line.quantity"/></td>
-                                                <td><span t-field="line.unit_price" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
-                                                <td class="text-right"><span t-field="line.subtotal" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                                <t t-if="quotation_request.state not in ['draft', 'validated', 'quotation_generated']">
+                                                    <td><span t-field="line.product_id.list_price" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
+                                                    <td class="text-right">
+                                                        <span t-esc="line.quantity * line.product_id.list_price" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/>
+                                                    </td>
+                                                </t>
                                             </tr>
                                         </t>
                                     </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="3" class="text-right"><strong>Total</strong></td>
-                                            <td class="text-right"><strong t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/></td>
-                                        </tr>
-                                    </tfoot>
                                 </table>
+                                
+                                <t t-if="quotation_request.state not in ['draft', 'validated', 'quotation_generated']">
+                                    <div class="row justify-content-end">
+                                        <div class="col-4">
+                                            <table class="table table-sm">
+                                                <tr class="border-top">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-right">
+                                                        <strong t-field="quotation_request.amount_total" t-options='{"widget": "monetary", "display_currency": quotation_request.currency_id}'/>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </t>
                                 
                                 <!-- Show link to sales order if it exists -->
                                 <div t-if="quotation_request.sale_order_id" class="mt-4">

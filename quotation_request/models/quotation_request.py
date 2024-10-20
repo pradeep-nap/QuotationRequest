@@ -169,25 +169,30 @@ class QuotationRequest(models.Model, MailThread):
             else:
                 quotation = self.quotation_id
 
-            # Update the quotation request state
+            # Confirm the quotation
+            quotation.action_confirm()
+            
+            # The sale order is now the confirmed quotation
+            sale_order = quotation
+
+            # Update the quotation request state and link to the sales order
             self.write({
                 'state': 'accepted',
+                'sale_order_id': sale_order.id,
             })
 
             # Check if it's a "Sign & Pay" action
             if self.env.context.get('sign_and_pay'):
-                # Confirm the quotation immediately
-                quotation.action_confirm()
                 return {
                     'type': 'ir.actions.act_url',
-                    'url': f'/my/orders/{quotation.id}',
+                    'url': f'/my/orders/{sale_order.id}',
                     'target': 'self',
                 }
             else:
-                # For regular accept, redirect to the quotation page
+                # For regular accept, redirect to the sales order page
                 return {
                     'type': 'ir.actions.act_url',
-                    'url': f'/my/quotes/{quotation.id}',
+                    'url': f'/my/orders/{sale_order.id}',
                     'target': 'self',
                 }
         else:
